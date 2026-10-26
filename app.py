@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state='expanded'
 )
 
-# 2. Estilos Neón Cyberpunk
+# 2. Estilos Neón Cyberpunk (Textos e Inputs Neón Corregidos)
 st.markdown("""
     <style>
     /* Fondo principal oscuro cibernético */
@@ -61,13 +61,26 @@ st.markdown("""
         text-shadow: 0 0 5px rgba(0, 240, 255, 0.5) !important;
     }
 
-    /* Input de texto en azul neón */
+    /* ESTILO PARA INPUT DE TEXTO Y LABELS EN AZUL NEÓN */
+    div[data-testid="stTextInput"] label {
+        color: #00F0FF !important;
+        font-weight: bold !important;
+        font-size: 1.1rem !important;
+        text-shadow: 0 0 8px rgba(0, 240, 255, 0.6) !important;
+    }
+
     div[data-testid="stTextInput"] input {
         background-color: #1A2232 !important;
         color: #00F0FF !important;
-        border: 1px solid #00F0FF !important;
+        border: 2px solid #00F0FF !important;
         border-radius: 8px !important;
         font-weight: bold !important;
+        box-shadow: 0 0 10px rgba(0, 240, 255, 0.2) !important;
+    }
+
+    div[data-testid="stTextInput"] input::placeholder {
+        color: #90CDF4 !important;
+        opacity: 0.8 !important;
     }
 
     /* Marco para el lienzo del canvas */
@@ -206,7 +219,7 @@ with col_actions:
         else:
             st.warning("⚠️ Dibuja algo en el tablero antes de guardar.")
 
-# --- SECCIÓN: COLLAGE DE DIBUJOS ---
+# --- SECCIÓN: COLLAGE DE DIBUJOS (ROBUSTO ANTE FORMATOS VIEJOS) ---
 if st.session_state.saved_sketches:
     st.markdown("---")
     st.markdown('<div class="cyan-sub-title">🖼️ Collage Galería de Obras Guardadas</div>', unsafe_allow_html=True)
@@ -214,4 +227,13 @@ if st.session_state.saved_sketches:
     cols = st.columns(3)
     for idx, item in enumerate(st.session_state.saved_sketches):
         with cols[idx % 3]:
-            st.image(item["image"], caption=f"🎨 {item['title']}", use_container_width=True)
+            # Verificar si el elemento es un diccionario o una imagen directa de la sesión anterior
+            if isinstance(item, dict):
+                img_to_show = item.get("image")
+                caption_text = f"🎨 {item.get('title', f'Obra #{idx+1}')}"
+            else:
+                img_to_show = item
+                caption_text = f"🎨 Obra #{idx+1}"
+
+            if img_to_show is not None:
+                st.image(img_to_show, caption=caption_text, use_container_width=True)
