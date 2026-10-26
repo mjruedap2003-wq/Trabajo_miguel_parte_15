@@ -61,6 +61,15 @@ st.markdown("""
         text-shadow: 0 0 5px rgba(0, 240, 255, 0.5) !important;
     }
 
+    /* Input de texto en azul neón */
+    div[data-testid="stTextInput"] input {
+        background-color: #1A2232 !important;
+        color: #00F0FF !important;
+        border: 1px solid #00F0FF !important;
+        border-radius: 8px !important;
+        font-weight: bold !important;
+    }
+
     /* Marco para el lienzo del canvas */
     iframe[title="streamlit_drawable_canvas.canvas"] {
         border: 3px solid #00F0FF !important;
@@ -145,15 +154,21 @@ st.markdown('<h1 class="neon-title">⚡ TABLERO MULTICOLOR Y COLLAGE 🖌️</h1
 st.markdown("""
     <div class="info-card">
         <p style="margin:0;">
-            ✏️ Cambia de color en el panel izquierdo cuantas veces quieras sin perder tu trazo. ¡Mezcla todos los colores que desees en tu obra antes de guardarla al collage!
+            ✏️ Ponle un título a tu obra en el recuadro superior, dibuja con todos los colores que quieras y guárdala para armar tu collage interactivo.
         </p>
     </div>
 """, unsafe_allow_html=True)
 
-# --- ÁREA PRINCIPAL: CANVAS DE CLAVE FIJA Y BOTÓN ---
+# --- ÁREA PRINCIPAL: CANVAS DE CLAVE FIJA, TÍTULO Y BOTÓN ---
 col_canvas, col_actions = st.columns([2, 1])
 
 with col_canvas:
+    # Campo para el título personalizado del dibujo
+    sketch_title = st.text_input(
+        "🏷️ Título de tu dibujo:", 
+        placeholder="Ej: Robot Neón, Mi Gato Cyberpunk, Noche Estrellada..."
+    )
+
     st.markdown('<div class="cyan-sub-title">🎨 Lienzo de Dibujo</div>', unsafe_allow_html=True)
     
     # Clave estática ("main_canvas") para evitar reinicios al cambiar el color
@@ -177,8 +192,16 @@ with col_actions:
             input_numpy_array = np.array(canvas_result.image_data)
             input_image = Image.fromarray(input_numpy_array.astype('uint8'), 'RGBA')
             
-            st.session_state.saved_sketches.append(input_image.copy())
-            st.success("🎉 ¡Obra guardada exitosamente en el collage!")
+            # Asignar nombre ingresado o uno por defecto
+            final_title = sketch_title.strip() if sketch_title.strip() else f"Obra #{len(st.session_state.saved_sketches) + 1}"
+
+            # Guardar diccionario con imagen y título
+            st.session_state.saved_sketches.append({
+                "image": input_image.copy(),
+                "title": final_title
+            })
+
+            st.success(f"🎉 ¡'{final_title}' se guardó exitosamente en el collage!")
             st.rerun()
         else:
             st.warning("⚠️ Dibuja algo en el tablero antes de guardar.")
@@ -189,6 +212,6 @@ if st.session_state.saved_sketches:
     st.markdown('<div class="cyan-sub-title">🖼️ Collage Galería de Obras Guardadas</div>', unsafe_allow_html=True)
     
     cols = st.columns(3)
-    for idx, img in enumerate(st.session_state.saved_sketches):
+    for idx, item in enumerate(st.session_state.saved_sketches):
         with cols[idx % 3]:
-            st.image(img, caption=f"Obra #{idx+1}", use_container_width=True)
+            st.image(item["image"], caption=f"🎨 {item['title']}", use_container_width=True)
