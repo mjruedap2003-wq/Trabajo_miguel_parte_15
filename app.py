@@ -162,7 +162,7 @@ with st.sidebar:
         st.rerun()
 
 # --- ENCABEZADO ---
-st.markdown('<h1 class="neon-title">⚡ TABLERO MULTICOLOR Y COLLAGE 🖌️</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="neon-title">⚡ TABLERO MULTICOLOR Y COLLAGE PARA ARTISTAS MELOS🖌️</h1>', unsafe_allow_html=True)
 
 st.markdown("""
     <div class="info-card">
