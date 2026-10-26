@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state='expanded'
 )
 
-# 2. Estilos Neón Cyberpunk (Barra Lateral y Fondo)
+# 2. Estilos Neón Cyberpunk
 st.markdown("""
     <style>
     /* Fondo principal oscuro cibernético */
@@ -59,15 +59,6 @@ st.markdown("""
         color: #00F0FF !important;
         font-weight: bold !important;
         text-shadow: 0 0 5px rgba(0, 240, 255, 0.5) !important;
-    }
-
-    /* Contenedor de la Paleta de Colores en el Sidebar */
-    .palette-container {
-        background-color: #1A2232;
-        padding: 12px;
-        border-radius: 10px;
-        border: 1px solid #00F0FF;
-        margin-bottom: 1rem;
     }
 
     /* Marco para el lienzo del canvas */
@@ -118,8 +109,8 @@ if "selected_color" not in st.session_state:
 with st.sidebar:
     st.markdown('<div class="cyan-sub-title">🎨 Paleta de Colores</div>', unsafe_allow_html=True)
     
-    # Selector libre de color
-    picker_color = st.color_picker("Selecciona tu color personalizado", st.session_state.selected_color)
+    # Selector de color de Streamlit
+    picker_color = st.color_picker("Selecciona tu color", st.session_state.selected_color)
     if picker_color != st.session_state.selected_color:
         st.session_state.selected_color = picker_color
 
@@ -149,21 +140,23 @@ with st.sidebar:
         st.rerun()
 
 # --- ENCABEZADO ---
-st.markdown('<h1 class="neon-title">⚡ TABLERO DE DIBUJO Y COLLAGE 🖌️</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="neon-title">⚡ TABLERO MULTICOLOR Y COLLAGE 🖌️</h1>', unsafe_allow_html=True)
 
 st.markdown("""
     <div class="info-card">
         <p style="margin:0;">
-            ✏️ Haz tus dibujos en el lienzo usando la paleta de colores de la izquierda. Cada obra que guardes se añadirá automáticamente al <strong>Collage Galería</strong> al final de la página.
+            ✏️ Cambia de color en el panel izquierdo cuantas veces quieras sin perder tu trazo. ¡Mezcla todos los colores que desees en tu obra antes de guardarla al collage!
         </p>
     </div>
 """, unsafe_allow_html=True)
 
-# --- ÁREA PRINCIPAL: CANVAS Y BOTÓN DE GUARDADO ---
+# --- ÁREA PRINCIPAL: CANVAS DE CLAVE FIJA Y BOTÓN ---
 col_canvas, col_actions = st.columns([2, 1])
 
 with col_canvas:
     st.markdown('<div class="cyan-sub-title">🎨 Lienzo de Dibujo</div>', unsafe_allow_html=True)
+    
+    # Clave estática ("main_canvas") para evitar reinicios al cambiar el color
     canvas_result = st_canvas(
         fill_color="rgba(255, 0, 127, 0.3)",
         stroke_width=stroke_width,
@@ -172,7 +165,7 @@ with col_canvas:
         height=380,
         width=500,
         drawing_mode="freedraw",
-        key=f"canvas_{st.session_state.selected_color}_{bg_color}",
+        key="main_canvas",
     )
 
 with col_actions:
@@ -184,14 +177,13 @@ with col_actions:
             input_numpy_array = np.array(canvas_result.image_data)
             input_image = Image.fromarray(input_numpy_array.astype('uint8'), 'RGBA')
             
-            # Guardar copia en el collage
             st.session_state.saved_sketches.append(input_image.copy())
-            st.success("🎉 ¡Dibujo guardado exitosamente en el collage!")
+            st.success("🎉 ¡Obra guardada exitosamente en el collage!")
             st.rerun()
         else:
             st.warning("⚠️ Dibuja algo en el tablero antes de guardar.")
 
-# --- SECCIÓN: COLLAGE AUTOMÁTICO DE DIBUJOS ---
+# --- SECCIÓN: COLLAGE DE DIBUJOS ---
 if st.session_state.saved_sketches:
     st.markdown("---")
     st.markdown('<div class="cyan-sub-title">🖼️ Collage Galería de Obras Guardadas</div>', unsafe_allow_html=True)
