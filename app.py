@@ -1,21 +1,17 @@
-import os
-import base64
-import numpy as np
 import streamlit as st
+import numpy as np
 from PIL import Image
-from openai import OpenAI
-import openai
 from streamlit_drawable_canvas import st_canvas
 
-# 1. Configuración de página
+# 1. Configuración de la página
 st.set_page_config(
-    page_title='Tablero Inteligente Cyberpunk ⚡',
+    page_title='Tablero de Dibujo & Collage 🎨',
     page_icon='🎨',
     layout='wide',
     initial_sidebar_state='expanded'
 )
 
-# 2. Estilos Neón Cyberpunk (CSS Completo: Izquierda y Derecha)
+# 2. Estilos Neón Cyberpunk (Barra Lateral y Fondo)
 st.markdown("""
     <style>
     /* Fondo principal oscuro cibernético */
@@ -25,7 +21,7 @@ st.markdown("""
     }
     #MainMenu, footer, header {visibility: hidden;}
 
-    /* Título con resplandor cian */
+    /* Título principal */
     .neon-title {
         font-size: 2.3rem;
         font-weight: 900;
@@ -41,7 +37,7 @@ st.markdown("""
         font-size: 1.3rem !important;
         font-weight: 800 !important;
         text-shadow: 0 0 8px rgba(0, 240, 255, 0.6) !important;
-        margin-top: 1rem !important;
+        margin-top: 0.8rem !important;
         margin-bottom: 0.8rem !important;
     }
 
@@ -65,15 +61,16 @@ st.markdown("""
         text-shadow: 0 0 5px rgba(0, 240, 255, 0.5) !important;
     }
 
-    /* Sliders e Inputs en la barra lateral */
-    div[data-testid="stSlider"] {
-        background-color: #1A2232 !important;
-        padding: 10px !important;
-        border-radius: 8px !important;
-        border: 1px solid #00F0FF !important;
+    /* Contenedor de la Paleta de Colores en el Sidebar */
+    .palette-container {
+        background-color: #1A2232;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid #00F0FF;
+        margin-bottom: 1rem;
     }
 
-    /* Marco del Canvas */
+    /* Marco para el lienzo del canvas */
     iframe[title="streamlit_drawable_canvas.canvas"] {
         border: 3px solid #00F0FF !important;
         border-radius: 10px !important;
@@ -99,148 +96,107 @@ st.markdown("""
         box-shadow: 0 0 20px rgba(0, 255, 102, 0.8) !important;
     }
 
-    /* Cajas de respuesta */
-    .stAlert {
-        background-color: #181E2A !important;
-        border: 1px solid #00F0FF !important;
-        color: #00F0FF !important;
-        box-shadow: 0 0 10px rgba(0, 240, 255, 0.3) !important;
-    }
-
-    /* Tarjeta contenedora de descripciones */
+    /* Tarjeta contenedora de información */
     .info-card {
         background: #181E2A;
         border: 1px solid #00F0FF;
         border-radius: 10px;
         padding: 1rem;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Función para convertir imágenes a base64
-def encode_image_to_base64(image_path):
-    try:
-        with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode("utf-8")
-    except FileNotFoundError:
-        return "Error: La imagen no se encontró en la ruta especificada."
-
-# Inicializar galería en st.session_state
+# 3. Inicialización del estado de sesión
 if "saved_sketches" not in st.session_state:
     st.session_state.saved_sketches = []
 
-# --- BARRA LATERAL ---
+if "selected_color" not in st.session_state:
+    st.session_state.selected_color = "#00F0FF"
+
+# --- BARRA LATERAL (PALETA Y PARÁMETROS) ---
 with st.sidebar:
-    st.markdown('<div class="cyan-sub-title">⚙️ Acerca de:</div>', unsafe_allow_html=True)
-    st.write("En esta aplicación veremos la capacidad que tiene una IA Vision para interpretar bocetos en tiempo real.")
+    st.markdown('<div class="cyan-sub-title">🎨 Paleta de Colores</div>', unsafe_allow_html=True)
     
-    st.markdown("---")
-    st.markdown('<div class="cyan-sub-title">🛠️ Parámetros de Trazo</div>', unsafe_allow_html=True)
-    stroke_width = st.slider('Ancho de línea', 1, 30, 5)
+    # Selector libre de color
+    picker_color = st.color_picker("Selecciona tu color personalizado", st.session_state.selected_color)
+    if picker_color != st.session_state.selected_color:
+        st.session_state.selected_color = picker_color
+
+    st.markdown("**Atajos de Colores Neón:**")
+    col1, col2, col3, col4 = st.columns(4)
+    if col1.button("🩵"): st.session_state.selected_color = "#00F0FF"
+    if col2.button("🩷"): st.session_state.selected_color = "#FF007F"
+    if col3.button("💚"): st.session_state.selected_color = "#00FF66"
+    if col4.button("💛"): st.session_state.selected_color = "#FFE600"
+
+    col5, col6, col7, col8 = st.columns(4)
+    if col5.button("💜"): st.session_state.selected_color = "#A855F7"
+    if col6.button("🤍"): st.session_state.selected_color = "#FFFFFF"
+    if col7.button("🖤"): st.session_state.selected_color = "#000000"
+    if col8.button("🧡"): st.session_state.selected_color = "#FF7700"
+
+    st.markdown(f"**Color activo:** `{st.session_state.selected_color}`")
 
     st.markdown("---")
-    # Limpiar collage
-    if st.button("🗑️ Limpiar Collage"):
+    st.markdown('<div class="cyan-sub-title">🛠️ Parámetros del Trazo</div>', unsafe_allow_html=True)
+    stroke_width = st.slider('Ancho del pincel', 1, 40, 8)
+    bg_color = st.color_picker("Color del fondo del lienzo", "#0A0E17")
+
+    st.markdown("---")
+    if st.button("🗑️ Vaciar Collage"):
         st.session_state.saved_sketches = []
         st.rerun()
 
 # --- ENCABEZADO ---
-st.markdown('<h1 class="neon-title">⚡ TABLERO INTELIGENTE CYBERPUNK 🎨</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="neon-title">⚡ TABLERO DE DIBUJO Y COLLAGE 🖌️</h1>', unsafe_allow_html=True)
 
 st.markdown("""
     <div class="info-card">
-        <p style="margin:0;">✏️ Dibuja tu boceto en el panel de la izquierda, ingresa tu API Key y presiona el botón para analizarlo con IA.</p>
+        <p style="margin:0;">
+            ✏️ Haz tus dibujos en el lienzo usando la paleta de colores de la izquierda. Cada obra que guardes se añadirá automáticamente al <strong>Collage Galería</strong> al final de la página.
+        </p>
     </div>
 """, unsafe_allow_html=True)
 
-# Entrada de la API Key
-secret_key = st.secrets.get("OPENAI_API_KEY", "")
-ke = st.text_input('🔑 Ingresa tu API Key de OpenAI', value=secret_key, type="password")
-api_key = ke if ke else secret_key
-
-# --- ÁREA PRINCIPAL: CANVAS + BOTÓN ---
+# --- ÁREA PRINCIPAL: CANVAS Y BOTÓN DE GUARDADO ---
 col_canvas, col_actions = st.columns([2, 1])
 
 with col_canvas:
     st.markdown('<div class="cyan-sub-title">🎨 Lienzo de Dibujo</div>', unsafe_allow_html=True)
     canvas_result = st_canvas(
-        fill_color="rgba(255, 165, 0, 0.3)",
+        fill_color="rgba(255, 0, 127, 0.3)",
         stroke_width=stroke_width,
-        stroke_color="#000000",
-        background_color="#FFFFFF",
-        height=320,
-        width=420,
+        stroke_color=st.session_state.selected_color,
+        background_color=bg_color,
+        height=380,
+        width=500,
         drawing_mode="freedraw",
-        key="canvas",
+        key=f"canvas_{st.session_state.selected_color}_{bg_color}",
     )
 
 with col_actions:
     st.markdown('<div class="cyan-sub-title">🕹️ Acciones</div>', unsafe_allow_html=True)
-    analyze_button = st.button("⚡ ANALIZAR BOCETO", type="primary")
+    save_button = st.button("💾 GUARDAR AL COLLAGE", type="primary")
 
-# --- PROCESAMIENTO E INTERPRETACIONAL ---
-if analyze_button:
-    if not api_key:
-        st.warning("⚠️ Por favor ingresa tu API key de OpenAI.")
-    elif canvas_result.image_data is None or np.max(canvas_result.image_data) == 0:
-        st.warning("⚠️ Dibuja algo en el tablero primero.")
-    else:
-        with st.spinner("🌌 Escaneando y analizando matriz de trazos..."):
-            try:
-                # Convertir a imagen y guardar temporalmente
-                input_numpy_array = np.array(canvas_result.image_data)
-                input_image = Image.fromarray(input_numpy_array.astype('uint8'), 'RGBA')
-                input_image.save('img.png')
+    if save_button:
+        if canvas_result.image_data is not None and np.max(canvas_result.image_data) > 0:
+            input_numpy_array = np.array(canvas_result.image_data)
+            input_image = Image.fromarray(input_numpy_array.astype('uint8'), 'RGBA')
+            
+            # Guardar copia en el collage
+            st.session_state.saved_sketches.append(input_image.copy())
+            st.success("🎉 ¡Dibujo guardado exitosamente en el collage!")
+            st.rerun()
+        else:
+            st.warning("⚠️ Dibuja algo en el tablero antes de guardar.")
 
-                # Codificar en base64
-                base64_image = encode_image_to_base64("img.png")
-                prompt_text = "Describe detalladamente lo que ves en este boceto en español."
-
-                client = OpenAI(api_key=api_key)
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "text", "text": prompt_text},
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": f"data:image/png;base64,{base64_image}"
-                                    },
-                                },
-                            ],
-                        }
-                    ],
-                    max_tokens=500,
-                )
-
-                analysis_result = response.choices[0].message.content
-
-                # Mostrar resultado de la IA
-                st.markdown('<div class="cyan-sub-title">🤖 Interpretación de la IA:</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="stAlert">{analysis_result}</div>', unsafe_allow_html=True)
-
-                # Guardar en el collage
-                st.session_state.saved_sketches.append({
-                    "image": input_image.copy(),
-                    "description": analysis_result
-                })
-
-            except Exception as e:
-                st.error(f"❌ Ocurrió un error al procesar el dibujo: {e}")
-
-# --- FUNCIÓN ESPECIAL: COLLAGE AUTOMÁTICO DE BOCETOS ---
+# --- SECCIÓN: COLLAGE AUTOMÁTICO DE DIBUJOS ---
 if st.session_state.saved_sketches:
     st.markdown("---")
-    st.markdown('<div class="cyan-sub-title">🖼️ Collage Automático de Dibujos Guardados</div>', unsafe_allow_html=True)
+    st.markdown('<div class="cyan-sub-title">🖼️ Collage Galería de Obras Guardadas</div>', unsafe_allow_html=True)
     
-    # Renderizar en grilla dinámica
     cols = st.columns(3)
-    for idx, item in enumerate(st.session_state.saved_sketches):
+    for idx, img in enumerate(st.session_state.saved_sketches):
         with cols[idx % 3]:
-            st.image(item["image"], caption=f"Dibujo #{idx+1}", use_container_width=True)
-            with st.expander(f"Ver Análisis #{idx+1}"):
-                st.write(item["description"])
+            st.image(img, caption=f"Obra #{idx+1}", use_container_width=True)
