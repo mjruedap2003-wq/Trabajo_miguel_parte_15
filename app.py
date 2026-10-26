@@ -167,7 +167,7 @@ st.markdown('<h1 class="neon-title">⚡ TABLERO MULTICOLOR Y COLLAGE 🖌️</h1
 st.markdown("""
     <div class="info-card">
         <p style="margin:0;">
-            ✏️ Ponle un título a tu obra en el recuadro superior, dibuja con todos los colores que quieras y guárdala para armar tu collage interactivo.
+            ✏️ ¡Bienvenido bro! Pon a prueba tu creatividad tan aspera, ponle un título a tu obra en el recuadro superior, dibuja con todos los colores que quieras y guárdala para armar tu collage interactivo.
         </p>
     </div>
 """, unsafe_allow_html=True)
